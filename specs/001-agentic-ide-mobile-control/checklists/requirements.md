@@ -32,5 +32,9 @@
 ## Notes
 
 - Items marked incomplete require spec updates before `/speckit-clarify` or `/speckit-plan`
-- Remote reachability across networks is deliberately left to planning; it is recorded as an
-  assumption rather than a requirement so the spec stays technology-agnostic.
+- 2026-08-31 (`/speckit-clarify`): re-validated after five clarifications were integrated
+  (LAN-only scope, model provider configuration, multi-project single-session model, approval
+  resolution across devices, transcript storage and retention). All 16 items still pass; the
+  connectivity note below is now resolved rather than deferred.
+- Remote reachability across networks is now decided: local network only for this feature, with
+  internet access deferred to a separate future feature.

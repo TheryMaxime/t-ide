@@ -16,6 +16,7 @@
 - Q: How does the developer supply the AI model that powers the agent? → A: Bring-your-own provider credentials, stored on the computer only, plus support for a locally-running model so the developer can work with no external provider.
 - Q: How many projects can a computer expose, and can more than one agent session be active at once? → A: Several registered projects, but only one agent session running at any moment across the whole computer; a second prompt is queued or refused.
 - Q: Which device may answer an approval request when both are connected? → A: Either device; the first response wins and the request is withdrawn from the other, showing which device decided.
+- Q: Where does a session transcript live, and how long is it kept? → A: The computer stores all transcripts indefinitely until the developer deletes them; the phone caches only the session it is viewing and can browse history only while connected.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -144,6 +145,8 @@ history on each device and confirm both show the same ordered, attributed transc
    both show the same sessions in the same order with the same content.
 2. **Given** a transcript entry, **When** the developer inspects it, **Then** it shows which
    device originated the prompt or approval and when.
+3. **Given** the computer is unreachable, **When** the developer opens history on the phone,
+   **Then** the phone states that history is unavailable instead of showing stale data.
 
 ---
 
@@ -160,8 +163,10 @@ history on each device and confirm both show the same ordered, attributed transc
   developer is warned about the conflict before the change is applied.
 - The agent tries to read or write outside the selected project folder — the action is refused
   and recorded.
-- The computer goes to sleep or loses power mid-run — the session is marked interrupted, and no
-  partially applied change is presented as complete.
+- The computer goes to sleep or loses power mid-run — the session is marked interrupted, the
+  transcript written so far is preserved, and no partially applied change is presented as complete.
+- Stored history grows large over many sessions — the developer can see how much space it uses and
+  delete sessions to reclaim it.
 - A prompt produces a very large amount of output — the phone remains responsive and does not run
   out of memory.
 - The pairing between phone and computer is revoked while a prompt is running — the run stops
@@ -197,6 +202,10 @@ history on each device and confirm both show the same ordered, attributed transc
   agent MUST stop within 5 seconds.
 - **FR-007**: The system MUST record every prompt, response, file change, command, and approval
   decision in a persistent session transcript, attributed to the originating device.
+- **FR-007f**: The computer MUST be the single source of truth for transcripts, storing them on
+  local disk so they survive restarting T-ide or the machine.
+- **FR-007g**: The system MUST retain transcripts indefinitely and MUST NOT delete them
+  automatically; the developer MUST be able to delete an individual session or all history.
 
 **Model provider configuration**
 
@@ -241,6 +250,10 @@ history on each device and confirm both show the same ordered, attributed transc
   disconnected.
 - **FR-017**: The mobile app MUST reconnect automatically after a network interruption and rejoin
   the session it was viewing, showing the output produced while it was away.
+- **FR-017a**: The mobile app MUST retain only the session it is currently viewing and MUST fetch
+  all other history from the computer on demand.
+- **FR-017b**: When the computer is unreachable, the mobile app MUST state that history is
+  unavailable rather than presenting a partial or stale transcript as complete.
 - **FR-018**: The mobile app MUST present pending approval requests with the full text of the
   command or the list of affected file paths, and MUST let the developer approve or deny.
 - **FR-018a**: When a pending request is resolved on another device, the mobile app MUST remove it
@@ -292,7 +305,8 @@ history on each device and confirm both show the same ordered, attributed transc
   expiry time, and its resolution. Answerable from any connected device; records which device
   decided and when. Resolves exactly once.
 - **Transcript Entry**: One ordered, timestamped record in a session, attributed to a device and
-  typed (prompt, response, file change, command, approval decision, error).
+  typed (prompt, response, file change, command, approval decision, error). Stored on the computer;
+  held on the phone only for the session currently being viewed.
 
 ## Success Criteria *(mandatory)*
 
@@ -316,6 +330,8 @@ history on each device and confirm both show the same ordered, attributed transc
   approve, confirm applied — entirely from the phone in 90% of attempts.
 - **SC-008**: Every session transcript viewed on the phone matches the desktop transcript entry
   for entry, with no missing or reordered entries.
+- **SC-008a**: A transcript written before a restart of T-ide or the computer is fully readable
+  afterwards in 100% of cases.
 - **SC-009**: Every functional requirement in this specification maps to at least one automated
   test, verified as a merge gate.
 
