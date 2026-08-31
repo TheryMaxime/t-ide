@@ -8,6 +8,12 @@
 
 **Input**: User description: "T-ide is a agentic IDE running on a computer and a mobile app that connect to the IDE in order to run prompt in the computer."
 
+## Clarifications
+
+### Session 2026-08-31
+
+- Q: When the phone and the computer are not on the same Wi-Fi network, how should the phone reach the computer? → A: LAN-only for this feature; internet/remote access is explicitly deferred to a later feature.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Run a prompt on the computer from the desktop IDE (Priority: P1)
@@ -64,7 +70,8 @@ listed as trusted on the desktop, revoke it, and confirm the phone can no longer
 
 ### User Story 3 - Send a prompt from the phone and watch it run (Priority: P1)
 
-Away from their desk, the developer opens the mobile app, picks one of the projects exposed by
+Away from the keyboard but still on the same local network — on the sofa, in a meeting room —
+the developer opens the mobile app, picks one of the projects exposed by
 their paired computer, types or dictates a prompt, and sends it. The agent runs on the computer.
 The phone shows the response streaming in, the files being changed, and any command output.
 
@@ -137,8 +144,8 @@ history on each device and confirm both show the same ordered, attributed transc
 
 ### Edge Cases
 
-- The phone and computer are on different networks — the developer is told whether remote access
-  is available and, if not, why.
+- The phone leaves the computer's local network — the phone shows an explicit "not on the same
+  network as your computer" state rather than an unexplained connection failure.
 - Two devices submit prompts to the same project at the same time — the second is queued or
   refused with a clear message rather than interleaving two agent runs over the same files.
 - The agent proposes a change to a file that was edited on disk since the prompt started — the
@@ -189,6 +196,10 @@ history on each device and confirm both show the same ordered, attributed transc
   transit and mutually authenticated, so that an unpaired device cannot issue prompts.
 - **FR-013**: The system MUST NOT expose the computer's agent capabilities to any device that has
   not completed pairing.
+- **FR-013a**: Pairing and all subsequent communication MUST operate over the local network only;
+  the system MUST NOT route prompts, transcripts, or approvals through any third-party relay.
+- **FR-013b**: The mobile app MUST let a developer find their paired computer on the local network
+  without typing an address by hand.
 
 **Mobile client**
 
@@ -197,7 +208,8 @@ history on each device and confirm both show the same ordered, attributed transc
 - **FR-015**: The mobile app MUST let the developer submit a prompt as text and MUST display the
   resulting streamed transcript.
 - **FR-016**: The mobile app MUST show the current connection state (connected, reconnecting,
-  computer unavailable) and MUST NOT accept a prompt silently while disconnected.
+  computer unavailable, not on the same network) and MUST NOT accept a prompt silently while
+  disconnected.
 - **FR-017**: The mobile app MUST reconnect automatically after a network interruption and rejoin
   the session it was viewing, showing the output produced while it was away.
 - **FR-018**: The mobile app MUST present pending approval requests with the full text of the
@@ -249,7 +261,7 @@ history on each device and confirm both show the same ordered, attributed transc
 - **SC-001**: A developer can pair a phone with their computer for the first time in under
   2 minutes without reading documentation.
 - **SC-002**: A prompt sent from the phone begins producing visible output on the phone within
-  3 seconds of being sent, on a normal mobile connection.
+  3 seconds of being sent, on a typical home or office Wi-Fi network.
 - **SC-003**: 95% of streamed output produced on the computer appears on the phone within
   1 second of being produced.
 - **SC-004**: After a network interruption of up to 2 minutes, the phone rejoins the session and
@@ -281,8 +293,8 @@ history on each device and confirm both show the same ordered, attributed transc
   computer to submit a prompt.
 - Version control operations (commits, branches, pull requests) are out of scope for this feature
   and will be specified separately.
-- Connectivity between phone and computer is expected to work both on the same local network and
-  when the devices are on different networks; the means of reaching the computer remotely is an
-  implementation decision for the planning phase.
+- Connectivity is local-network only for this feature: the phone must be on the same local network
+  as the computer to pair or send prompts. Reaching the computer over the internet (relay or
+  peer-to-peer) is explicitly deferred to a later feature.
 - The desktop IDE displays the pairing code; the mobile app may enter it manually or scan it, and
   both entry methods are considered equivalent.
