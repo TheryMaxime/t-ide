@@ -15,6 +15,7 @@
 - Q: When the phone and the computer are not on the same Wi-Fi network, how should the phone reach the computer? → A: LAN-only for this feature; internet/remote access is explicitly deferred to a later feature.
 - Q: How does the developer supply the AI model that powers the agent? → A: Bring-your-own provider credentials, stored on the computer only, plus support for a locally-running model so the developer can work with no external provider.
 - Q: How many projects can a computer expose, and can more than one agent session be active at once? → A: Several registered projects, but only one agent session running at any moment across the whole computer; a second prompt is queued or refused.
+- Q: Which device may answer an approval request when both are connected? → A: Either device; the first response wins and the request is withdrawn from the other, showing which device decided.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -120,6 +121,8 @@ the computer.
    performed and the agent continues or stops with the denial recorded.
 3. **Given** an approval request, **When** neither device responds within the configured window,
    **Then** the request expires as a denial and the session records the timeout.
+4. **Given** an approval request visible on both devices, **When** it is answered on one of them,
+   **Then** it disappears from the other device and shows which device decided and how.
 
 ---
 
@@ -184,6 +187,12 @@ history on each device and confirm both show the same ordered, attributed transc
   record the refusal in the session transcript.
 - **FR-005**: The system MUST require explicit developer approval before applying a file change or
   executing a command, with a per-project setting to auto-approve read-only actions.
+- **FR-005a**: An approval request MUST be answerable from any connected device; the first response
+  received MUST decide the outcome, and every other device MUST immediately withdraw the request
+  and show which device decided and how.
+- **FR-005b**: The system MUST accept exactly one decision per approval request; a decision
+  arriving after the request is already resolved MUST be ignored and MUST NOT cause the action to
+  run twice.
 - **FR-006**: Developers MUST be able to cancel a running prompt from any connected device and the
   agent MUST stop within 5 seconds.
 - **FR-007**: The system MUST record every prompt, response, file change, command, and approval
@@ -234,6 +243,8 @@ history on each device and confirm both show the same ordered, attributed transc
   the session it was viewing, showing the output produced while it was away.
 - **FR-018**: The mobile app MUST present pending approval requests with the full text of the
   command or the list of affected file paths, and MUST let the developer approve or deny.
+- **FR-018a**: When a pending request is resolved on another device, the mobile app MUST remove it
+  from the pending list within 1 second and show the recorded outcome.
 - **FR-019**: Approval requests MUST expire after a configurable window (default 5 minutes) and
   MUST be treated as a denial on expiry.
 - **FR-020**: The mobile app MUST notify the developer when a prompt finishes, fails, or needs
@@ -277,8 +288,9 @@ history on each device and confirm both show the same ordered, attributed transc
   changes, commands, approvals, and final outcome. Attributed to the device that sent it.
 - **Paired Device**: A mobile device trusted by a computer. Has a display name, a pairing date,
   a last-seen time, and a revoked/active state.
-- **Approval Request**: A pending risky action (file write or command) with its full details, the
-  device(s) that may answer it, an expiry time, and its resolution.
+- **Approval Request**: A pending risky action (file write or command) with its full details, an
+  expiry time, and its resolution. Answerable from any connected device; records which device
+  decided and when. Resolves exactly once.
 - **Transcript Entry**: One ordered, timestamped record in a session, attributed to a device and
   typed (prompt, response, file change, command, approval decision, error).
 
