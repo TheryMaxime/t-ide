@@ -14,6 +14,7 @@
 
 - Q: When the phone and the computer are not on the same Wi-Fi network, how should the phone reach the computer? → A: LAN-only for this feature; internet/remote access is explicitly deferred to a later feature.
 - Q: How does the developer supply the AI model that powers the agent? → A: Bring-your-own provider credentials, stored on the computer only, plus support for a locally-running model so the developer can work with no external provider.
+- Q: How many projects can a computer expose, and can more than one agent session be active at once? → A: Several registered projects, but only one agent session running at any moment across the whole computer; a second prompt is queued or refused.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -147,8 +148,11 @@ history on each device and confirm both show the same ordered, attributed transc
 
 - The phone leaves the computer's local network — the phone shows an explicit "not on the same
   network as your computer" state rather than an unexplained connection failure.
-- Two devices submit prompts to the same project at the same time — the second is queued or
-  refused with a clear message rather than interleaving two agent runs over the same files.
+- Two devices submit prompts at the same time, whether to the same project or to two different
+  registered projects — the second is queued or refused with a clear message naming the busy
+  project, rather than interleaving two agent runs.
+- A registered project folder is renamed, moved, or deleted on disk — the project is shown as
+  unavailable and cannot be used to start a session until the developer repairs or removes it.
 - The agent proposes a change to a file that was edited on disk since the prompt started — the
   developer is warned about the conflict before the change is applied.
 - The agent tries to read or write outside the selected project folder — the action is refused
@@ -168,10 +172,12 @@ history on each device and confirm both show the same ordered, attributed transc
 
 **Agent sessions on the computer**
 
-- **FR-001**: The system MUST let a developer open a project folder on the computer and start an
-  agent session scoped to that folder.
+- **FR-001**: The system MUST let a developer register one or more project folders on the computer
+  and start an agent session scoped to a single chosen folder.
+- **FR-001a**: The system MUST let the developer add, rename, and remove registered projects, and
+  MUST make the registered list visible to paired devices.
 - **FR-002**: The system MUST accept a natural-language prompt and run an agent that can read
-  files, propose file changes, and request command execution within the open project.
+  files, propose file changes, and request command execution within the session's project.
 - **FR-003**: The system MUST stream agent output — reasoning summary, file changes, and command
   output — to every connected client as it is produced, not only on completion.
 - **FR-004**: The system MUST refuse any agent read or write outside the open project folder and
@@ -237,8 +243,11 @@ history on each device and confirm both show the same ordered, attributed transc
 
 - **FR-021**: A session MUST be viewable and controllable from the desktop IDE and the mobile app
   at the same time, with both showing the same ordered transcript.
-- **FR-022**: The system MUST run at most one prompt per project session at a time; a concurrent
-  submission MUST be queued or refused with a clear reason.
+- **FR-022**: The computer MUST run at most one agent session at a time, across all registered
+  projects; a prompt submitted while another session is running MUST be queued or refused with a
+  clear reason naming the project that is busy.
+- **FR-022a**: Every connected device MUST be able to see which project currently holds the
+  running session.
 - **FR-023**: The system MUST detect that a file changed on disk after a prompt started and warn
   before applying a conflicting change.
 - **FR-024**: The system MUST mark a session as interrupted, rather than complete, when the
@@ -255,8 +264,9 @@ history on each device and confirm both show the same ordered, attributed transc
 
 - **Computer (IDE host)**: The machine running T-ide. Owns projects, agent sessions, the paired
   device list, and all file and command execution.
-- **Project**: A folder on the computer that bounds what an agent session may read or write.
-  Has a name, a path, and per-project approval settings.
+- **Project**: A registered folder on the computer that bounds what an agent session may read or
+  write. Has a name, a path, per-project approval settings, and an available/unavailable state.
+  A computer may have many; only one may host a running session at a time.
 - **Model Provider**: A configured source of model capability — either an external service the
   developer holds credentials for, or a model running on the developer's own machine or local
   network. Has a display name, a location, credentials held only on the computer, and a
