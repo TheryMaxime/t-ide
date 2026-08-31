@@ -13,6 +13,7 @@
 ### Session 2026-08-31
 
 - Q: When the phone and the computer are not on the same Wi-Fi network, how should the phone reach the computer? → A: LAN-only for this feature; internet/remote access is explicitly deferred to a later feature.
+- Q: How does the developer supply the AI model that powers the agent? → A: Bring-your-own provider credentials, stored on the computer only, plus support for a locally-running model so the developer can work with no external provider.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -182,6 +183,19 @@ history on each device and confirm both show the same ordered, attributed transc
 - **FR-007**: The system MUST record every prompt, response, file change, command, and approval
   decision in a persistent session transcript, attributed to the originating device.
 
+**Model provider configuration**
+
+- **FR-007a**: The developer MUST be able to configure at least one model provider on the computer
+  by supplying their own credentials, and to choose which configured provider a session uses.
+- **FR-007b**: The system MUST support using a model running on the developer's own machine or
+  local network, so that a session can run with no external provider configured.
+- **FR-007c**: Provider credentials MUST be stored only on the computer, MUST never be sent to the
+  mobile app, and MUST never appear in transcripts, logs, or error messages.
+- **FR-007d**: The system MUST NOT send prompts or project content to any destination other than
+  the model provider the developer configured for that session.
+- **FR-007e**: When no provider is configured, or the configured provider rejects the request, the
+  system MUST surface an actionable error on every connected device rather than failing silently.
+
 **Pairing and trust**
 
 - **FR-008**: The system MUST allow a mobile device to be paired with a computer using a
@@ -243,6 +257,10 @@ history on each device and confirm both show the same ordered, attributed transc
   device list, and all file and command execution.
 - **Project**: A folder on the computer that bounds what an agent session may read or write.
   Has a name, a path, and per-project approval settings.
+- **Model Provider**: A configured source of model capability — either an external service the
+  developer holds credentials for, or a model running on the developer's own machine or local
+  network. Has a display name, a location, credentials held only on the computer, and a
+  local/external kind.
 - **Agent Session**: A conversation bound to one project. Has a status (idle, running, waiting for
   approval, interrupted, complete), an ordered transcript, and a set of connected clients.
 - **Prompt Run**: A single prompt and everything it produced — response text, proposed file
@@ -270,6 +288,8 @@ history on each device and confirm both show the same ordered, attributed transc
   an automated test suite covering every approval path, with zero exceptions.
 - **SC-006**: An unpaired device fails to obtain any project information or run any prompt in 100%
   of attempts.
+- **SC-006a**: Provider credentials never leave the computer — verified by automated tests
+  asserting that no transcript, log, error message, or message sent to the phone contains them.
 - **SC-007**: A developer can complete a full remote round trip — send prompt, review changes,
   approve, confirm applied — entirely from the phone in 90% of attempts.
 - **SC-008**: Every session transcript viewed on the phone matches the desktop transcript entry
@@ -283,8 +303,9 @@ history on each device and confirm both show the same ordered, attributed transc
   user or team collaboration is out of scope for this feature.
 - The developer's computer is a normal desktop or laptop that they control and can install
   software on.
-- The agent's model capability is provided by an external service; choosing, configuring, and
-  paying for that service is out of scope here.
+- The agent's model capability is provided either by an external provider the developer holds
+  credentials for, or by a model running locally; paying for and operating that provider is the
+  developer's responsibility and out of scope here. T-ide ships no accounts and no billing.
 - Prompts and generated content are transmitted only between the developer's own devices and the
   model provider the developer configures.
 - The mobile app is a companion, not a full editor: browsing and editing arbitrary files by hand
