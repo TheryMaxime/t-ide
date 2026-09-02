@@ -1,0 +1,2 @@
+# Keep the backend readable: flag functions with unusually long argument lists.
+too-many-arguments-threshold = 6

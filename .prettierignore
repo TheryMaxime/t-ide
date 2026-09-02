@@ -1,0 +1,12 @@
+node_modules/
+dist/
+build/
+coverage/
+target/
+package-lock.json
+mobile/node_modules/
+
+# Spec Kit artifacts and generated docs are kept verbatim
+.specify/
+specs/
+*.md

@@ -1,0 +1,11 @@
+{
+  "expo": {
+    "name": "T-ide",
+    "slug": "t-ide",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "ios": { "supportsTablet": true, "bundleIdentifier": "dev.tide.mobile" },
+    "android": { "package": "dev.tide.mobile" }
+  }
+}
