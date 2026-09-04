@@ -37,13 +37,13 @@ story.
 
 **Purpose**: Project initialization and basic structure
 
-- [ ] T001 Create top-level project structure (`src-tauri/`, `src/`, `mobile/`, `tests/`) per plan.md's Project Structure section
-- [ ] T002 Initialize Tauri 2.0 project in `src-tauri/Cargo.toml` with `tokio`, `axum`, `axum-extra` (WebSocket), `tokio-tungstenite`, `sqlx` (or `rusqlite`), `keyring`, and `mdns` dependencies
-- [ ] T003 [P] Initialize React 19 + TypeScript desktop frontend in `src/` with `package.json` (Vite/Tauri frontend scaffold)
-- [ ] T004 [P] Initialize React Native (Expo) mobile app in `mobile/` with `package.json`
-- [ ] T005 [P] Configure Rust linting/formatting (`clippy`, `rustfmt.toml`) for `src-tauri/`
-- [ ] T006 [P] Configure ESLint/Prettier for desktop frontend `src/` and mobile app `mobile/`
-- [ ] T007 Setup SQLite migration framework (`sqlx migrate` or equivalent) with initial empty migration in `src-tauri/migrations/`
+- [X] T001 Create top-level project structure (`src-tauri/`, `src/`, `mobile/`, `tests/`) per plan.md's Project Structure section
+- [X] T002 Initialize Tauri 2.0 project in `src-tauri/Cargo.toml` with `tokio`, `axum`, `axum-extra` (WebSocket), `tokio-tungstenite`, `sqlx` (or `rusqlite`), `keyring`, and `mdns` dependencies
+- [X] T003 [P] Initialize React 19 + TypeScript desktop frontend in `src/` with `package.json` (Vite/Tauri frontend scaffold)
+- [X] T004 [P] Initialize React Native (Expo) mobile app in `mobile/` with `package.json`
+- [X] T005 [P] Configure Rust linting/formatting (`clippy`, `rustfmt.toml`) for `src-tauri/`
+- [X] T006 [P] Configure ESLint/Prettier for desktop frontend `src/` and mobile app `mobile/`
+- [X] T007 Setup SQLite migration framework (`sqlx migrate` or equivalent) with initial empty migration in `src-tauri/migrations/`
 
 **Checkpoint**: Toolchains installed and building; no functional code yet.
 
@@ -55,21 +55,21 @@ story.
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T008 Create SQLite schema migration for all entities (`projects`, `model_providers`, `paired_devices`, `agent_sessions`, `transcript_entries`, `approval_requests`, `session_client_connections`) with indexes and foreign keys per data-model.md in `src-tauri/migrations/0001_initial.sql`
-- [ ] T009 [P] Implement Project repository (CRUD, path uniqueness, availability check) in `src-tauri/src/storage/projects.rs`
-- [ ] T010 [P] Implement ModelProvider repository and provider abstraction scaffold in `src-tauri/src/agent/provider.rs`
-- [ ] T011 [P] Implement PairedDevice repository (create, list, revoke) in `src-tauri/src/storage/pairing.rs`
-- [ ] T012 [P] Implement AgentSession repository and status state machine (idle→running→waiting_approval→interrupted/complete) in `src-tauri/src/agent/session.rs`
-- [ ] T013 [P] Implement TranscriptEntry repository (ordered insert/query) in `src-tauri/src/storage/transcripts.rs`
-- [ ] T014 [P] Implement ApprovalRequest repository (create, resolve-once semantics) in `src-tauri/src/agent/approval.rs`
-- [ ] T015 [P] Implement SessionClientConnection repository (track active connections per session/device) in `src-tauri/src/storage/connections.rs`
-- [ ] T016 Implement file system sandbox enforcement (refuse read/write outside project folder, log refusal) in `src-tauri/src/security/sandbox.rs`
-- [ ] T017 Implement credential storage via OS keychain (`keyring` crate), never exposed to frontend/mobile in `src-tauri/src/security/credentials.rs`
-- [ ] T018 Setup Axum HTTP/WSS server skeleton (TLS, `/ws` route) in `src-tauri/src/network/server.rs`
-- [ ] T019 Implement WebSocket JSON message envelope (type-tagged parse/dispatch per contracts/websocket-protocol.md) in `src-tauri/src/network/server.rs`
-- [ ] T020 Implement global single-session mutex enforcing at most one running/waiting_approval session across all projects (FR-022) in `src-tauri/src/agent/session.rs`
-- [ ] T021 Configure structured error handling and logging infrastructure in `src-tauri/src/main.rs`
-- [ ] T022 Configure app/environment configuration management (app data dir, config file) in `src-tauri/src/main.rs`
+- [X] T008 Create SQLite schema migration for all entities (`projects`, `model_providers`, `paired_devices`, `agent_sessions`, `transcript_entries`, `approval_requests`, `session_client_connections`) with indexes and foreign keys per data-model.md in `src-tauri/migrations/0001_initial.sql`
+- [X] T009 [P] Implement Project repository (CRUD, path uniqueness, availability check) in `src-tauri/src/storage/projects.rs`
+- [X] T010 [P] Implement ModelProvider repository and provider abstraction scaffold in `src-tauri/src/agent/provider.rs`
+- [X] T011 [P] Implement PairedDevice repository (create, list, revoke) in `src-tauri/src/storage/pairing.rs`
+- [X] T012 [P] Implement AgentSession repository and status state machine (idle→running→waiting_approval→interrupted/complete) in `src-tauri/src/agent/session.rs`
+- [X] T013 [P] Implement TranscriptEntry repository (ordered insert/query) in `src-tauri/src/storage/transcripts.rs`
+- [X] T014 [P] Implement ApprovalRequest repository (create, resolve-once semantics) in `src-tauri/src/agent/approval.rs`
+- [X] T015 [P] Implement SessionClientConnection repository (track active connections per session/device) in `src-tauri/src/storage/connections.rs`
+- [X] T016 Implement file system sandbox enforcement (refuse read/write outside project folder, log refusal) in `src-tauri/src/security/sandbox.rs`
+- [X] T017 Implement credential storage via OS keychain (`keyring` crate), never exposed to frontend/mobile in `src-tauri/src/security/credentials.rs`
+- [X] T018 Setup Axum HTTP/WSS server skeleton (TLS, `/ws` route) in `src-tauri/src/network/server.rs`
+- [X] T019 Implement WebSocket JSON message envelope (type-tagged parse/dispatch per contracts/websocket-protocol.md) in `src-tauri/src/network/server.rs`
+- [X] T020 Implement global single-session mutex enforcing at most one running/waiting_approval session across all projects (FR-022) in `src-tauri/src/agent/session.rs`
+- [X] T021 Configure structured error handling and logging infrastructure in `src-tauri/src/main.rs`
+- [X] T022 Configure app/environment configuration management (app data dir, config file) in `src-tauri/src/main.rs`
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 

@@ -1,0 +1,29 @@
+# Rust / Tauri backend
+target/
+**/*.rs.bk
+
+# Node
+node_modules/
+dist/
+build/
+.expo/
+coverage/
+*.tsbuildinfo
+
+# Logs and local env
+*.log
+.env
+.env.*
+
+# Local application data (SQLite database, TLS material)
+*.db
+*.db-shm
+*.db-wal
+
+# Editors and OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.tmp
