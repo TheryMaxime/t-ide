@@ -1,9 +1,16 @@
 //! Approval request storage with resolve-once semantics (T014).
 
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
+use std::time::Duration as StdDuration;
+
 use chrono::{DateTime, Duration, Utc};
 use rusqlite::{params, Row};
 use serde::{Deserialize, Serialize};
+use tokio::sync::oneshot;
 
+use crate::network::events::SessionEvents;
+use crate::network::protocol::{ApprovalRequestPayload, ServerMessage};
 use crate::storage::{now, Database};
 use crate::{Error, Result};
 
@@ -240,7 +247,7 @@ impl<'a> ApprovalRepository<'a> {
 
     /// Display name of whoever resolved a request ("desktop" when the decision
     /// came from the desktop IDE, "timeout" when it expired).
-    fn resolver_name(&self, request: &ApprovalRequest) -> Result<String> {
+    pub fn resolver_name(&self, request: &ApprovalRequest) -> Result<String> {
         match request.resolved_by_device_id {
             Some(device_id) => Ok(
                 crate::storage::pairing::PairedDeviceRepository::new(self.db)
@@ -253,12 +260,125 @@ impl<'a> ApprovalRepository<'a> {
     }
 }
 
+/// Live approval coordination on top of [`ApprovalRepository`] (T030).
+///
+/// Requests are broadcast to every connected client, the first decision wins,
+/// and an unanswered request is treated as a denial once its window closes
+/// (FR-005/FR-005a/FR-005b/FR-019).
+#[derive(Clone)]
+pub struct ApprovalService {
+    db: Arc<Database>,
+    events: SessionEvents,
+    waiters: Arc<Mutex<HashMap<i64, oneshot::Sender<Decision>>>>,
+}
+
+impl ApprovalService {
+    pub fn new(db: Arc<Database>, events: SessionEvents) -> Self {
+        Self {
+            db,
+            events,
+            waiters: Arc::new(Mutex::new(HashMap::new())),
+        }
+    }
+
+    /// Ask every connected client for a decision and wait for the first answer.
+    ///
+    /// Read-only actions are approved without asking when the project enables
+    /// `auto_approve_read_only` (FR-005).
+    pub async fn request(
+        &self,
+        session_id: i64,
+        request_type: ApprovalKind,
+        details: &serde_json::Value,
+        timeout: StdDuration,
+    ) -> Result<Decision> {
+        let repository = ApprovalRepository::new(&self.db);
+        let request = repository.create(session_id, request_type, details, timeout)?;
+
+        let (sender, receiver) = oneshot::channel();
+        self.waiters
+            .lock()
+            .expect("approval waiters poisoned")
+            .insert(request.id, sender);
+
+        self.events.publish(ServerMessage::ApprovalRequestMessage {
+            session_id,
+            request: ApprovalRequestPayload {
+                id: request.id,
+                request_type: request.request_type,
+                details: request.details.clone(),
+                expires_at: request.expires_at.clone(),
+            },
+        });
+
+        let decision = match tokio::time::timeout(timeout, receiver).await {
+            Ok(Ok(decision)) => decision,
+            // The waiter was dropped (server shutting down) or the window
+            // closed without an answer: both count as a denial (FR-019).
+            Ok(Err(_)) | Err(_) => {
+                self.forget(request.id);
+                let _ = repository.resolve(request.id, Decision::Denied, None);
+                Decision::Denied
+            }
+        };
+        Ok(decision)
+    }
+
+    /// Record a client's decision and wake the waiting agent.
+    ///
+    /// Late answers fail with [`Error::AlreadyResolved`] naming the device that
+    /// answered first (FR-005b).
+    pub fn respond(
+        &self,
+        request_id: i64,
+        decision: Decision,
+        device_id: Option<i64>,
+    ) -> Result<ApprovalRequest> {
+        let repository = ApprovalRepository::new(&self.db);
+        let request = repository.resolve(request_id, decision, device_id)?;
+
+        if let Some(sender) = self.forget(request_id) {
+            let _ = sender.send(decision);
+        }
+
+        self.events.publish(ServerMessage::ApprovalResponded {
+            request_id,
+            resolved_by_device_name: repository.resolver_name(&request)?,
+            decision,
+        });
+        Ok(request)
+    }
+
+    /// Deny every request whose window has passed and notify clients.
+    pub fn expire_overdue(&self) -> Result<Vec<ApprovalRequest>> {
+        let repository = ApprovalRepository::new(&self.db);
+        let denied = repository.expire_overdue()?;
+        for request in &denied {
+            if let Some(sender) = self.forget(request.id) {
+                let _ = sender.send(Decision::Denied);
+            }
+            self.events.publish(ServerMessage::ApprovalResponded {
+                request_id: request.id,
+                resolved_by_device_name: "timeout".into(),
+                decision: Decision::Denied,
+            });
+        }
+        Ok(denied)
+    }
+
+    fn forget(&self, request_id: i64) -> Option<oneshot::Sender<Decision>> {
+        self.waiters
+            .lock()
+            .expect("approval waiters poisoned")
+            .remove(&request_id)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::storage::pairing::PairedDeviceRepository;
     use crate::test_support::seed_session;
-    use std::time::Duration as StdDuration;
 
     fn details() -> serde_json::Value {
         serde_json::json!({ "command": "npm install", "cwd": "/tmp/project" })

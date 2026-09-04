@@ -120,6 +120,19 @@ impl CredentialStore for KeyringCredentialStore {
     }
 }
 
+/// The credential store for this build: the OS keychain when the
+/// `os-keychain` feature is enabled, otherwise the in-memory store.
+pub fn default_store() -> std::sync::Arc<dyn CredentialStore> {
+    #[cfg(feature = "os-keychain")]
+    {
+        std::sync::Arc::new(KeyringCredentialStore::new())
+    }
+    #[cfg(not(feature = "os-keychain"))]
+    {
+        std::sync::Arc::new(InMemoryCredentialStore::new())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
