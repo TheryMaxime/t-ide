@@ -89,24 +89,24 @@ transcript records every step.
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T023 [P] [US1] Contract test for `session.create` / `session.cancel` messages in `tests/network/test_session_lifecycle.rs`
-- [ ] T024 [P] [US1] Contract test for `prompt.send` and `transcript.entry` streaming in `tests/network/test_prompt_send.rs`
-- [ ] T025 [P] [US1] Integration test: full prompt run with file-change approval, rejection, and command approval in `tests/agent/test_prompt_flow.rs`
-- [ ] T026 [P] [US1] Integration test: agent refuses read/write outside project folder and records refusal in `tests/security/test_sandbox.rs`
+- [X] T023 [P] [US1] Contract test for `session.create` / `session.cancel` messages in `tests/network/test_session_lifecycle.rs`
+- [X] T024 [P] [US1] Contract test for `prompt.send` and `transcript.entry` streaming in `tests/network/test_prompt_send.rs`
+- [X] T025 [P] [US1] Integration test: full prompt run with file-change approval, rejection, and command approval in `tests/agent/test_prompt_flow.rs`
+- [X] T026 [P] [US1] Integration test: agent refuses read/write outside project folder and records refusal in `tests/security/test_sandbox.rs`
 
 ### Implementation for User Story 1
 
-- [ ] T027 [US1] Implement OpenAI-compatible model provider HTTP client (external + local) in `src-tauri/src/agent/provider.rs` (depends on T010)
-- [ ] T028 [US1] Implement prompt processing engine (reads files, proposes changes, requests command execution, scoped to project) in `src-tauri/src/agent/mod.rs` (depends on T016, T027)
-- [ ] T029 [US1] Implement streaming of agent output (reasoning, file changes, command output) to connected clients as `transcript.entry` messages in `src-tauri/src/network/server.rs` (depends on T019, T028)
-- [ ] T030 [US1] Implement approval gating for file changes and commands, with per-project auto-approve-read-only setting (FR-005) in `src-tauri/src/agent/approval.rs` (depends on T014, T028)
-- [ ] T031 [US1] Implement prompt cancellation stopping the agent within 5 seconds (FR-006) in `src-tauri/src/agent/session.rs` (depends on T012, T028)
-- [ ] T032 [US1] Record transcript entries for every prompt, response, file change, command, and approval decision in `src-tauri/src/storage/transcripts.rs` (depends on T013, T028)
-- [ ] T033 [US1] Implement `session.list` / `session.create` / `session.cancel` / `prompt.send` WebSocket handlers wiring engine to protocol in `src-tauri/src/network/server.rs` (depends on T018, T028, T031)
-- [ ] T034 [US1] [P] Implement Project registration UI (add/rename/remove, availability state) in `src/components/ProjectList/`
-- [ ] T035 [US1] [P] Implement Session panel UI (prompt input, streamed transcript, approve/reject controls) in `src/components/SessionPanel/`
-- [ ] T036 [US1] [P] Implement Model Provider settings UI (add provider, choose default, select per session) in `src/components/Settings/`
-- [ ] T037 [US1] Implement desktop WebSocket client hook connecting frontend to backend session state in `src/hooks/useSession.ts` (depends on T033)
+- [X] T027 [US1] Implement OpenAI-compatible model provider HTTP client (external + local) in `src-tauri/src/agent/provider.rs` (depends on T010)
+- [X] T028 [US1] Implement prompt processing engine (reads files, proposes changes, requests command execution, scoped to project) in `src-tauri/src/agent/mod.rs` (depends on T016, T027)
+- [X] T029 [US1] Implement streaming of agent output (reasoning, file changes, command output) to connected clients as `transcript.entry` messages in `src-tauri/src/network/server.rs` (depends on T019, T028)
+- [X] T030 [US1] Implement approval gating for file changes and commands, with per-project auto-approve-read-only setting (FR-005) in `src-tauri/src/agent/approval.rs` (depends on T014, T028)
+- [X] T031 [US1] Implement prompt cancellation stopping the agent within 5 seconds (FR-006) in `src-tauri/src/agent/session.rs` (depends on T012, T028)
+- [X] T032 [US1] Record transcript entries for every prompt, response, file change, command, and approval decision in `src-tauri/src/storage/transcripts.rs` (depends on T013, T028)
+- [X] T033 [US1] Implement `session.list` / `session.create` / `session.cancel` / `prompt.send` WebSocket handlers wiring engine to protocol in `src-tauri/src/network/server.rs` (depends on T018, T028, T031)
+- [X] T034 [US1] [P] Implement Project registration UI (add/rename/remove, availability state) in `src/components/ProjectList/`
+- [X] T035 [US1] [P] Implement Session panel UI (prompt input, streamed transcript, approve/reject controls) in `src/components/SessionPanel/`
+- [X] T036 [US1] [P] Implement Model Provider settings UI (add provider, choose default, select per session) in `src/components/Settings/`
+- [X] T037 [US1] Implement desktop WebSocket client hook connecting frontend to backend session state in `src/hooks/useSession.ts` (depends on T033)
 
 **Checkpoint**: At this point, User Story 1 should be fully functional and testable independently on the desktop alone.
 

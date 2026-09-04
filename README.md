@@ -12,6 +12,10 @@ plan, and task list.
 | Desktop frontend (React + TS) | `src/` | `npm install`, `npm run dev`, `npm run build`, `npm test`, `npm run lint` |
 | Mobile app (Expo / React Native) | `mobile/` | `npm install`, `npm start`, `npm run typecheck` |
 
+Backend unit tests live next to the code; the contract and integration suites
+live in `tests/` (registered as `[[test]]` targets in `src-tauri/Cargo.toml`)
+and desktop component tests in `tests/frontend/`.
+
 The backend builds headless by default. Two integrations are opt-in because they
 need platform toolkits that are not present everywhere:
 

@@ -8,8 +8,8 @@ export default defineConfig({
   build: { outDir: 'dist' },
   test: {
     environment: 'jsdom',
-    include: ['../tests/frontend/**/*.test.{ts,tsx}', 'src/**/*.test.{ts,tsx}'],
-    // Story test tasks add the first suites; the scaffold must not fail yet.
-    passWithNoTests: true,
+    // Enables Testing Library's automatic DOM cleanup between tests.
+    globals: true,
+    include: ['tests/frontend/**/*.test.{ts,tsx}', 'src/**/*.test.{ts,tsx}'],
   },
 });

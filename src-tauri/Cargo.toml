@@ -41,6 +41,24 @@ tokio-tungstenite = "0.30"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
+# Integration and contract tests live in the repository-level `tests/` tree
+# described in plan.md, so they are registered explicitly here.
+[[test]]
+name = "test_session_lifecycle"
+path = "../tests/network/test_session_lifecycle.rs"
+
+[[test]]
+name = "test_prompt_send"
+path = "../tests/network/test_prompt_send.rs"
+
+[[test]]
+name = "test_prompt_flow"
+path = "../tests/agent/test_prompt_flow.rs"
+
+[[test]]
+name = "test_sandbox"
+path = "../tests/security/test_sandbox.rs"
+
 [dev-dependencies]
 tempfile = "3"
 
