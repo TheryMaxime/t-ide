@@ -3,6 +3,11 @@
 //! Credentials are never stored here: they live in the OS keychain keyed by
 //! provider id (see `security::credentials`).
 
+use std::future::Future;
+use std::pin::Pin;
+use std::sync::Arc;
+use std::time::Duration;
+
 use rusqlite::{params, Row};
 use serde::{Deserialize, Serialize};
 
@@ -166,12 +171,128 @@ pub struct CompletionResponse {
     pub text: String,
 }
 
-/// Abstraction over external and local providers. The HTTP implementation is
-/// added with User Story 1 (T027).
-#[allow(async_fn_in_trait)]
+/// Abstraction over external and local providers.
 pub trait ProviderClient {
     /// Run a completion request against the provider.
-    async fn complete(&self, request: CompletionRequest) -> Result<CompletionResponse>;
+    fn complete(
+        &self,
+        request: CompletionRequest,
+    ) -> impl Future<Output = Result<CompletionResponse>> + Send;
+}
+
+/// Object-safe form of [`ProviderClient`], so a session can be run against a
+/// provider chosen at runtime.
+pub trait DynProviderClient: Send + Sync {
+    fn complete_boxed<'a>(
+        &'a self,
+        request: CompletionRequest,
+    ) -> Pin<Box<dyn Future<Output = Result<CompletionResponse>> + Send + 'a>>;
+}
+
+impl<T> DynProviderClient for T
+where
+    T: ProviderClient + Send + Sync,
+{
+    fn complete_boxed<'a>(
+        &'a self,
+        request: CompletionRequest,
+    ) -> Pin<Box<dyn Future<Output = Result<CompletionResponse>> + Send + 'a>> {
+        Box::pin(self.complete(request))
+    }
+}
+
+/// Shared handle to a provider client.
+pub type SharedProvider = Arc<dyn DynProviderClient>;
+
+/// How long a single completion request may take before it is abandoned.
+const REQUEST_TIMEOUT: Duration = Duration::from_secs(120);
+
+/// OpenAI-compatible chat-completions client, used for both hosted providers
+/// and locally served models (T027).
+///
+/// The API credential is read from the OS keychain by the caller and only ever
+/// travels in the `Authorization` header; it is never logged or included in an
+/// error message.
+pub struct HttpProviderClient {
+    http: reqwest::Client,
+    completions_url: String,
+    api_key: Option<String>,
+}
+
+impl HttpProviderClient {
+    /// Build a client for `provider`, optionally authenticated with `api_key`.
+    pub fn new(provider: &ModelProvider, api_key: Option<String>) -> Result<Self> {
+        let http = reqwest::Client::builder()
+            .timeout(REQUEST_TIMEOUT)
+            .build()
+            .map_err(|err| Error::Provider(format!("could not build HTTP client: {err}")))?;
+        Ok(Self {
+            http,
+            completions_url: format!(
+                "{}/chat/completions",
+                provider.api_base_url.trim_end_matches('/')
+            ),
+            api_key,
+        })
+    }
+}
+
+impl ProviderClient for HttpProviderClient {
+    async fn complete(&self, request: CompletionRequest) -> Result<CompletionResponse> {
+        let mut post = self
+            .http
+            .post(&self.completions_url)
+            .json(&serde_json::json!({
+                "model": request.model,
+                "messages": request.messages,
+                "stream": false,
+            }));
+        if let Some(key) = &self.api_key {
+            post = post.bearer_auth(key);
+        }
+
+        let response = post
+            .send()
+            .await
+            .map_err(|err| Error::Provider(sanitize(&err.to_string())))?;
+        let status = response.status();
+        let body = response
+            .text()
+            .await
+            .map_err(|err| Error::Provider(sanitize(&err.to_string())))?;
+        if !status.is_success() {
+            return Err(Error::Provider(format!(
+                "provider returned {status}: {}",
+                sanitize(body.trim())
+            )));
+        }
+
+        let parsed: serde_json::Value = serde_json::from_str(&body)
+            .map_err(|err| Error::Provider(format!("malformed provider response: {err}")))?;
+        let text = parsed["choices"][0]["message"]["content"]
+            .as_str()
+            .ok_or_else(|| {
+                Error::Provider("provider response has no choices[0].message.content".into())
+            })?;
+        Ok(CompletionResponse {
+            text: text.to_string(),
+        })
+    }
+}
+
+/// Strip anything that looks like a credential out of provider diagnostics
+/// before it reaches a transcript, log line, or client (SC-006a).
+fn sanitize(message: &str) -> String {
+    let mut sanitized = String::with_capacity(message.len());
+    for word in message.split_whitespace() {
+        let looks_secret = word.starts_with("sk-")
+            || word.starts_with("Bearer")
+            || word.to_ascii_lowercase().contains("api_key")
+            || word.to_ascii_lowercase().contains("apikey");
+        sanitized.push_str(if looks_secret { "[redacted]" } else { word });
+        sanitized.push(' ');
+    }
+    sanitized.trim_end().to_string()
 }
 
 #[cfg(test)]

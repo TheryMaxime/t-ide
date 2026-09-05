@@ -21,7 +21,11 @@ async fn main() -> Result<()> {
 
     let db = Arc::new(Database::open(config.database_path())?);
     let tls = TlsPaths::from_config(&config);
-    let state = AppState::new(db, Arc::new(config));
+    let state = AppState::with_credentials(
+        db,
+        Arc::new(config),
+        t_ide::security::credentials::default_store(),
+    );
 
     server::serve(state, Some(tls)).await
 }

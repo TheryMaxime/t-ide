@@ -1,9 +1,12 @@
 //! Agent session lifecycle (T012) and the global single-session lock (T020).
 
+use std::collections::HashMap;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 
 use rusqlite::{params, Row};
 use serde::{Deserialize, Serialize};
+use tokio::sync::Notify;
 
 use crate::storage::{now, Database};
 use crate::{Error, Result};
@@ -301,6 +304,86 @@ impl SessionGuard {
 impl Drop for SessionGuard {
     fn drop(&mut self) {
         self.lock.release(self.session_id);
+    }
+}
+
+/// Cooperative cancellation handle for a running prompt (T031, FR-006).
+///
+/// The engine races every long-running step against [`CancelToken::cancelled`],
+/// so a cancel request takes effect as soon as the current step yields rather
+/// than after the whole prompt finishes.
+#[derive(Debug, Clone, Default)]
+pub struct CancelToken {
+    cancelled: Arc<AtomicBool>,
+    notify: Arc<Notify>,
+}
+
+impl CancelToken {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Request cancellation. Idempotent.
+    pub fn cancel(&self) {
+        self.cancelled.store(true, Ordering::SeqCst);
+        self.notify.notify_waiters();
+    }
+
+    pub fn is_cancelled(&self) -> bool {
+        self.cancelled.load(Ordering::SeqCst)
+    }
+
+    /// Resolve as soon as cancellation is requested.
+    pub async fn cancelled(&self) {
+        while !self.is_cancelled() {
+            self.notify.notified().await;
+        }
+    }
+}
+
+/// Cancel tokens of the prompts currently in flight, keyed by session id.
+#[derive(Debug, Clone, Default)]
+pub struct CancellationRegistry {
+    tokens: Arc<Mutex<HashMap<i64, CancelToken>>>,
+}
+
+impl CancellationRegistry {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Register (replacing any previous) token for a session.
+    pub fn register(&self, session_id: i64) -> CancelToken {
+        let token = CancelToken::new();
+        self.tokens
+            .lock()
+            .expect("cancellation registry poisoned")
+            .insert(session_id, token.clone());
+        token
+    }
+
+    /// Cancel a running prompt. Returns whether a prompt was in flight.
+    pub fn cancel(&self, session_id: i64) -> bool {
+        match self
+            .tokens
+            .lock()
+            .expect("cancellation registry poisoned")
+            .remove(&session_id)
+        {
+            Some(token) => {
+                token.cancel();
+                true
+            }
+            None => false,
+        }
+    }
+
+    /// Drop the token once the prompt has finished.
+    pub fn finish(&self, session_id: i64) {
+        self.tokens
+            .lock()
+            .expect("cancellation registry poisoned")
+            .remove(&session_id);
     }
 }
 
